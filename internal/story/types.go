@@ -79,6 +79,7 @@ type Scene struct {
 	Continuity     NarrativeState `json:"continuity_state"`
 	Prompt         string         `json:"prompt,omitempty"`
 	ImageKey       string         `json:"image_key,omitempty"`
+	RegenCount     int            `json:"regen_count,omitempty"`
 }
 
 // Storyboard is the complete directed visual plan for a video.

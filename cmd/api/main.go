@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"reel/internal/ai/imagegen"
 	"reel/internal/api"
 	"reel/internal/config"
 	"reel/internal/logger"
@@ -47,13 +48,23 @@ func main() {
 	}
 	defer tc.Close()
 
+	imgProvider, err := imagegen.NewWithFallback(cfg.AI)
+	if err != nil {
+		log.Warn("imagegen provider not initialized for scene regeneration", "error", err)
+	}
+
 	jobSvc := api.NewTemporalJobService(tc, cfg.Temporal.TaskQueue)
 	router := api.NewRouter(api.RouterDeps{
-		Logger:        log,
-		Env:           cfg.App.Env,
-		Storage:       st,
-		Jobs:          jobSvc,
-		MaxFileSizeMB: int64(cfg.Limits.MaxFileSizeMB),
+		Logger:           log,
+		Env:              cfg.App.Env,
+		Storage:          st,
+		Jobs:             jobSvc,
+		ImageGen:         imgProvider,
+		MaxFileSizeMB:    int64(cfg.Limits.MaxFileSizeMB),
+		MaxRegenAttempts: cfg.Limits.MaxRegenAttempts,
+		DefaultASR:       cfg.AI.ASRProvider,
+		DefaultLLM:       cfg.AI.LLMProvider,
+		DefaultImageGen:  cfg.AI.ImageGenProvider,
 	})
 
 	srv := &http.Server{

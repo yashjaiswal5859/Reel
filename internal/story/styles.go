@@ -65,3 +65,9 @@ func SupportedStyles() []VisualStyle {
 		Style3DCartoon, StyleCinematic, StylePaperCut, StyleMinimalistExplain,
 	}
 }
+
+// IsValidStyle reports whether s is a supported visual style.
+func IsValidStyle(s VisualStyle) bool {
+	_, ok := stylePresets[s]
+	return ok
+}
