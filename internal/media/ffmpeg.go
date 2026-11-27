@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -15,6 +16,7 @@ type Processor interface {
 	Probe(ctx context.Context, inputPath string) (*VideoMetadata, error)
 	ExtractNormalizedAudio(ctx context.Context, inputPath, outputPath string) error
 	GeneratePreview(ctx context.Context, inputPath, outputPath string) error
+	BurnSubtitles(ctx context.Context, inputVideoPath, assPath, outputPath string) error
 }
 
 // FFmpegProcessor executes ffprobe and ffmpeg subprocesses safely with bounded stderr.
@@ -138,6 +140,39 @@ func (p *FFmpegProcessor) GeneratePreview(ctx context.Context, inputPath, output
 		outputPath,
 	}
 	return p.runFFmpeg(ctx, args)
+}
+
+// BurnSubtitles burns an ASS subtitle file into a video stream.
+// Sets cmd.Dir to the ASS file's directory so relative filter paths work cross-platform (including Windows drive letters).
+func (p *FFmpegProcessor) BurnSubtitles(ctx context.Context, inputVideoPath, assPath, outputPath string) error {
+	absInput, err := filepath.Abs(inputVideoPath)
+	if err != nil {
+		return err
+	}
+	absOutput, err := filepath.Abs(outputPath)
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.CommandContext(ctx, p.ffmpegPath,
+		"-y",
+		"-i", absInput,
+		"-vf", "ass="+filepath.Base(assPath),
+		"-c:v", "libx264",
+		"-preset", "veryfast",
+		"-crf", "20",
+		"-c:a", "copy",
+		"-movflags", "+faststart",
+		absOutput,
+	)
+	cmd.Dir = filepath.Dir(assPath)
+	stderr := newLimitedBuffer(8 * 1024)
+	cmd.Stderr = stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("ffmpeg burn subtitles failed: %w (stderr: %s)", err, stderr.String())
+	}
+	return nil
 }
 
 func (p *FFmpegProcessor) runFFmpeg(ctx context.Context, args []string) error {

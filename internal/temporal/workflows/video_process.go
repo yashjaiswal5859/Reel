@@ -85,7 +85,24 @@ func VideoProcessingWorkflow(ctx workflow.Context, input VideoJobInput) (*media.
 	}
 
 	status.TranscriptKey = asrOut.TranscriptKey
-	status.Stage = media.StageTranscribed
+	status.Stage = media.StageGeneratingSubtitles
+	status.Progress = 80
+
+	var subOut activities.SubtitleOutput
+	var subActs *activities.SubtitleActivities
+	if err := workflow.ExecuteActivity(actCtx, subActs.GenerateSubtitles, activities.SubtitleInput{
+		JobID:         input.JobID,
+		TranscriptKey: asrOut.TranscriptKey,
+		Metadata:      &meta,
+	}).Get(ctx, &subOut); err != nil {
+		status.Stage = media.StageFailed
+		status.Error = err.Error()
+		return &status, err
+	}
+
+	status.SubtitlesKey = subOut.SubtitlesKey
+	status.SubtitlesASSKey = subOut.SubtitlesASSKey
+	status.Stage = media.StageSubtitlesReady
 	status.Progress = 100
 
 	return &status, nil

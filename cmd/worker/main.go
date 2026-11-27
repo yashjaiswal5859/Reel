@@ -74,12 +74,16 @@ func main() {
 		Storage: st,
 		ASR:     asrProvider,
 	}
+	subActs := &activities.SubtitleActivities{
+		Storage: st,
+	}
 
 	w.RegisterWorkflow(workflows.HelloWorkflow)
 	w.RegisterWorkflow(workflows.VideoProcessingWorkflow)
 	w.RegisterActivity(activities.HelloActivity)
 	w.RegisterActivity(prepActs)
 	w.RegisterActivity(asrActs)
+	w.RegisterActivity(subActs)
 
 	log.Info("starting temporal worker",
 		"task_queue", cfg.Temporal.TaskQueue,

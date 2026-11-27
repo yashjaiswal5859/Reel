@@ -23,26 +23,30 @@ type VideoMetadata struct {
 type JobStage string
 
 const (
-	StageUploaded       JobStage = "uploaded"
-	StagePreprocessing  JobStage = "preprocessing"
-	StageAudioExtracted JobStage = "audio_extracted"
-	StageTranscribing   JobStage = "transcribing"
-	StageTranscribed    JobStage = "transcribed"
-	StageFailed         JobStage = "failed"
-	StageCancelled      JobStage = "cancelled"
+	StageUploaded            JobStage = "uploaded"
+	StagePreprocessing       JobStage = "preprocessing"
+	StageAudioExtracted      JobStage = "audio_extracted"
+	StageTranscribing        JobStage = "transcribing"
+	StageTranscribed         JobStage = "transcribed"
+	StageGeneratingSubtitles JobStage = "generating_subtitles"
+	StageSubtitlesReady      JobStage = "subtitles_ready"
+	StageFailed              JobStage = "failed"
+	StageCancelled           JobStage = "cancelled"
 )
 
 // JobStatus represents the live status of a video processing job.
 type JobStatus struct {
-	JobID         string         `json:"job_id"`
-	Stage         JobStage       `json:"stage"`
-	Progress      int            `json:"progress"` // 0-100
-	InputKey      string         `json:"input_key"`
-	AudioKey      string         `json:"audio_key,omitempty"`
-	PreviewKey    string         `json:"preview_key,omitempty"`
-	TranscriptKey string         `json:"transcript_key,omitempty"`
-	Metadata      *VideoMetadata `json:"metadata,omitempty"`
-	Error         string         `json:"error,omitempty"`
+	JobID           string         `json:"job_id"`
+	Stage           JobStage       `json:"stage"`
+	Progress        int            `json:"progress"` // 0-100
+	InputKey        string         `json:"input_key"`
+	AudioKey        string         `json:"audio_key,omitempty"`
+	PreviewKey      string         `json:"preview_key,omitempty"`
+	TranscriptKey   string         `json:"transcript_key,omitempty"`
+	SubtitlesKey    string         `json:"subtitles_key,omitempty"`
+	SubtitlesASSKey string         `json:"subtitles_ass_key,omitempty"`
+	Metadata        *VideoMetadata `json:"metadata,omitempty"`
+	Error           string         `json:"error,omitempty"`
 }
 
 var allowedExtensions = map[string]bool{

@@ -41,6 +41,9 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 	th := &transcriptHandler{
 		storage: deps.Storage,
 	}
+	sh := &subtitleHandler{
+		storage: deps.Storage,
+	}
 
 	v1 := r.Group("/api/v1")
 	{
@@ -49,6 +52,8 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 		v1.DELETE("/jobs/:id", jh.cancel)
 		v1.GET("/jobs/:id/transcript", th.get)
 		v1.PUT("/jobs/:id/transcript", th.update)
+		v1.GET("/jobs/:id/subtitles", sh.get)
+		v1.PUT("/jobs/:id/subtitles/style", sh.updateStyle)
 	}
 
 	return r

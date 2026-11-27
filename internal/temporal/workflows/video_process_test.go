@@ -37,6 +37,10 @@ func (s *stubMediaProcessor) GeneratePreview(_ context.Context, _, outputPath st
 	return os.WriteFile(outputPath, []byte("mp4-preview-bytes"), 0600)
 }
 
+func (s *stubMediaProcessor) BurnSubtitles(_ context.Context, _, _, outputPath string) error {
+	return os.WriteFile(outputPath, []byte("mp4-burned-bytes"), 0600)
+}
+
 type stubASRStrategy struct{}
 
 func (s *stubASRStrategy) Name() string { return "stub-asr" }
@@ -86,11 +90,15 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 		Storage: st,
 		ASR:     &stubASRStrategy{},
 	}
+	subActs := &activities.SubtitleActivities{
+		Storage: st,
+	}
 
 	var ts testsuite.WorkflowTestSuite
 	env := ts.NewTestWorkflowEnvironment()
 	env.RegisterActivity(prepActs)
 	env.RegisterActivity(asrActs)
+	env.RegisterActivity(subActs)
 
 	env.ExecuteWorkflow(workflows.VideoProcessingWorkflow, workflows.VideoJobInput{
 		JobID:    "job-123",
@@ -102,16 +110,18 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 
 	var result media.JobStatus
 	require.NoError(t, env.GetWorkflowResult(&result))
-	assert.Equal(t, media.StageTranscribed, result.Stage)
+	assert.Equal(t, media.StageSubtitlesReady, result.Stage)
 	assert.Equal(t, 100, result.Progress)
 	assert.Equal(t, "jobs/job-123/audio.wav", result.AudioKey)
 	assert.Equal(t, "jobs/job-123/preview.mp4", result.PreviewKey)
 	assert.Equal(t, "jobs/job-123/transcript.json", result.TranscriptKey)
+	assert.Equal(t, "jobs/job-123/subtitles.json", result.SubtitlesKey)
+	assert.Equal(t, "jobs/job-123/subtitles.ass", result.SubtitlesASSKey)
 	require.NotNil(t, result.Metadata)
 	assert.Equal(t, "portrait", result.Metadata.Orientation)
 
 	// Verify all artifacts actually landed in storage
-	for _, k := range []string{result.AudioKey, result.PreviewKey, result.TranscriptKey} {
+	for _, k := range []string{result.AudioKey, result.PreviewKey, result.TranscriptKey, result.SubtitlesKey, result.SubtitlesASSKey} {
 		exists, err := st.Exists(ctx, k)
 		require.NoError(t, err)
 		assert.True(t, exists, "expected %s in storage", k)
