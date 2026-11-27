@@ -368,6 +368,7 @@ MAX_CONCURRENT_JOBS=10
 | 6.6 | Camera animation system (pan, zoom, shake) | REQ-037 | Medium |
 | 6.7 | Scene transition renderer (fade, crossfade, wipe) | REQ-039 | Medium |
 | 6.8 | Animation timeline sync with audio | REQ-040 | Hard |
+| 6.9 | Declarative `AnimationRendererStrategy` (FFmpeg procedural + optional Remotion sidecar) | REQ-040 | Medium |
 
 **Tests**: Animation event generation, timeline sync, transition rendering, visual output checks
 
@@ -378,11 +379,11 @@ MAX_CONCURRENT_JOBS=10
 
 | # | Task | REQs | Complexity |
 |---|------|------|-----------|
-| 7.1 | Split-screen layout engine | REQ-045 | Hard |
+| 7.1 | Split-screen layout Strategy (`50/50`, `40/60`, vertical stack, horizontal) | REQ-045 | Hard |
 | 7.2 | Original presenter video preservation | REQ-044 | Medium |
 | 7.3 | Animation panel rendering | REQ-045 | Hard |
 | 7.4 | Subtitle overlay compositor | REQ-048 | Medium |
-| 7.5 | Multi-aspect-ratio rendering (9:16, 16:9, 1:1) | REQ-065 | Medium |
+| 7.5 | Multi-aspect-ratio smart reframe & rendering (9:16, 16:9, 1:1) | REQ-065 | Medium |
 | 7.6 | Export quality settings (720p, 1080p, 4K) | REQ-066 | Easy |
 | 7.7 | Timeline validation | REQ-063 | Medium |
 | 7.8 | Final video validation | REQ-064 | Medium |
@@ -399,7 +400,7 @@ MAX_CONCURRENT_JOBS=10
 | # | Task | REQs | Complexity |
 |---|------|------|-----------|
 | 8.1 | Storyboard viewer API (scene cards, previews) | REQ-049 | Medium |
-| 8.2 | Scene editing API (description, duration, actions) | REQ-050 | Medium |
+| 8.2 | API-first / agent-native scene editing (declarative JSON patch: description, duration, actions) | REQ-050 | Medium |
 | 8.3 | Scene regeneration endpoint | REQ-050 | Medium |
 | 8.4 | Visual style selection API | REQ-023 | Easy |
 | 8.5 | Processing stage transparency API | REQ-089 | Easy |
@@ -431,7 +432,7 @@ MAX_CONCURRENT_JOBS=10
 | Priority | Features |
 |----------|----------|
 | **DB / Persistence** | PostgreSQL + `golang-migrate`, Project CRUD & history (REQ-002), persistent asset/video retention (REQ-088/091), user accounts & credit-based billing persistence (REQ-075) |
-| **P2** | Speaker detection (REQ-008), keyword emphasis (REQ-013), emoji integration (REQ-014), subtitle export (REQ-015), environment bible (REQ-019), object library (REQ-020), emotion-aware direction (REQ-025), character consistency validation (REQ-028/029), multi-candidate images (REQ-030), image regeneration (REQ-031), facial expressions (REQ-033), character interactions (REQ-034), visual effects (REQ-038), stateful animation (REQ-041), animation density (REQ-043), dynamic panels (REQ-046), face protection (REQ-047), libraries (REQ-051/052/053), prompt editing (REQ-054), undo/history (REQ-055), scene approval workflow (REQ-056), audio features (REQ-057/058/059), image quality check (REQ-062), brand kit (REQ-069), templates (REQ-070), analytics (REQ-078), scene density (REQ-081), cost optimization (REQ-084) |
+| **P2** | Silence/pause trimming (Vedit-style), speaker detection (REQ-008), keyword emphasis (REQ-013), emoji integration (REQ-014), subtitle export (REQ-015), environment bible (REQ-019), object library (REQ-020), emotion-aware direction (REQ-025), character consistency validation (REQ-028/029), multi-candidate images (REQ-030), image regeneration (REQ-031), facial expressions (REQ-033), character interactions (REQ-034), visual effects (REQ-038), stateful animation (REQ-041), animation density (REQ-043), dynamic panels (REQ-046), face protection (REQ-047), libraries (REQ-051/052/053), prompt editing (REQ-054), undo/history (REQ-055), scene approval workflow (REQ-056), audio features (REQ-057/058/059), image quality check (REQ-062), brand kit (REQ-069), templates (REQ-070), analytics (REQ-078), scene density (REQ-081), cost optimization (REQ-084) |
 | **P3** | AI video generation (REQ-042), content packaging (REQ-071), batch processing (REQ-072), team workspaces (REQ-073), public API (REQ-077), story universe (REQ-079), personalized style (REQ-082), story series (REQ-083), auto quality improvement (REQ-085) |
 
 ---
