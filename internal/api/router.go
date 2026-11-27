@@ -32,6 +32,7 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 
 	r := gin.New()
 	r.Use(gin.Recovery())
+	r.Use(CORS())
 	if deps.Logger != nil {
 		r.Use(RequestLogger(deps.Logger))
 	}
