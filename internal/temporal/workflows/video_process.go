@@ -102,7 +102,23 @@ func VideoProcessingWorkflow(ctx workflow.Context, input VideoJobInput) (*media.
 
 	status.SubtitlesKey = subOut.SubtitlesKey
 	status.SubtitlesASSKey = subOut.SubtitlesASSKey
-	status.Stage = media.StageSubtitlesReady
+	status.Stage = media.StageGeneratingStoryboard
+	status.Progress = 90
+
+	var storyOut activities.StoryOutput
+	var storyActs *activities.StoryActivities
+	if err := workflow.ExecuteActivity(actCtx, storyActs.GenerateStoryboard, activities.StoryInput{
+		JobID:            input.JobID,
+		TranscriptKey:    asrOut.TranscriptKey,
+		VideoDurationSec: meta.DurationSec,
+	}).Get(ctx, &storyOut); err != nil {
+		status.Stage = media.StageFailed
+		status.Error = err.Error()
+		return &status, err
+	}
+
+	status.StoryboardKey = storyOut.StoryboardKey
+	status.Stage = media.StageStoryboardReady
 	status.Progress = 100
 
 	return &status, nil

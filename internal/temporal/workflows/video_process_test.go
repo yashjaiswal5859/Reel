@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"reel/internal/ai/asr"
+	"reel/internal/ai/llm"
 	"reel/internal/media"
 	"reel/internal/storage"
 	"reel/internal/temporal/activities"
@@ -63,6 +64,25 @@ func (s *stubASRStrategy) Transcribe(_ context.Context, _ asr.TranscribeRequest)
 	}, nil
 }
 
+type stubLLMStrategy struct {
+	calls int
+}
+
+func (s *stubLLMStrategy) Name() string { return "stub-llm" }
+func (s *stubLLMStrategy) Generate(_ context.Context, _ llm.GenerateRequest) (*llm.GenerateResponse, error) {
+	s.calls++
+	if s.calls == 1 {
+		return &llm.GenerateResponse{
+			Provider: "stub-llm",
+			Content:  `{"title":"Test","summary":"Test","tone":"happy","characters":[{"id":"char_1","name":"Hero","physical_appearance":"boy"}],"locations":["park"],"key_objects":[],"chronological_events":["walks"],"relationships":[]}`,
+		}, nil
+	}
+	return &llm.GenerateResponse{
+		Provider: "stub-llm",
+		Content:  `{"scenes":[{"scene_id":"sc_1","index":1,"start_sec":0,"end_sec":1,"transcript_text":"Hello story.","visual_type":"character_animation","description":"Hero waves in park","location":"park","character_ids":["char_1"],"objects":[],"actions":["WAVE"],"camera_motion":"zoom_in","transition":"fade","continuity_state":{}}]}`,
+	}, nil
+}
+
 func TestVideoProcessingWorkflow_Success(t *testing.T) {
 	ctx := context.Background()
 	st, err := storage.NewLocalStorage(t.TempDir())
@@ -93,12 +113,17 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 	subActs := &activities.SubtitleActivities{
 		Storage: st,
 	}
+	storyActs := &activities.StoryActivities{
+		Storage: st,
+		LLM:     &stubLLMStrategy{},
+	}
 
 	var ts testsuite.WorkflowTestSuite
 	env := ts.NewTestWorkflowEnvironment()
 	env.RegisterActivity(prepActs)
 	env.RegisterActivity(asrActs)
 	env.RegisterActivity(subActs)
+	env.RegisterActivity(storyActs)
 
 	env.ExecuteWorkflow(workflows.VideoProcessingWorkflow, workflows.VideoJobInput{
 		JobID:    "job-123",
@@ -110,18 +135,19 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 
 	var result media.JobStatus
 	require.NoError(t, env.GetWorkflowResult(&result))
-	assert.Equal(t, media.StageSubtitlesReady, result.Stage)
+	assert.Equal(t, media.StageStoryboardReady, result.Stage)
 	assert.Equal(t, 100, result.Progress)
 	assert.Equal(t, "jobs/job-123/audio.wav", result.AudioKey)
 	assert.Equal(t, "jobs/job-123/preview.mp4", result.PreviewKey)
 	assert.Equal(t, "jobs/job-123/transcript.json", result.TranscriptKey)
 	assert.Equal(t, "jobs/job-123/subtitles.json", result.SubtitlesKey)
 	assert.Equal(t, "jobs/job-123/subtitles.ass", result.SubtitlesASSKey)
+	assert.Equal(t, "jobs/job-123/storyboard.json", result.StoryboardKey)
 	require.NotNil(t, result.Metadata)
 	assert.Equal(t, "portrait", result.Metadata.Orientation)
 
 	// Verify all artifacts actually landed in storage
-	for _, k := range []string{result.AudioKey, result.PreviewKey, result.TranscriptKey, result.SubtitlesKey, result.SubtitlesASSKey} {
+	for _, k := range []string{result.AudioKey, result.PreviewKey, result.TranscriptKey, result.SubtitlesKey, result.SubtitlesASSKey, result.StoryboardKey} {
 		exists, err := st.Exists(ctx, k)
 		require.NoError(t, err)
 		assert.True(t, exists, "expected %s in storage", k)

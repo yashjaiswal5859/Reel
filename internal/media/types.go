@@ -28,10 +28,12 @@ const (
 	StageAudioExtracted      JobStage = "audio_extracted"
 	StageTranscribing        JobStage = "transcribing"
 	StageTranscribed         JobStage = "transcribed"
-	StageGeneratingSubtitles JobStage = "generating_subtitles"
-	StageSubtitlesReady      JobStage = "subtitles_ready"
-	StageFailed              JobStage = "failed"
-	StageCancelled           JobStage = "cancelled"
+	StageGeneratingSubtitles  JobStage = "generating_subtitles"
+	StageSubtitlesReady       JobStage = "subtitles_ready"
+	StageGeneratingStoryboard JobStage = "generating_storyboard"
+	StageStoryboardReady      JobStage = "storyboard_ready"
+	StageFailed               JobStage = "failed"
+	StageCancelled            JobStage = "cancelled"
 )
 
 // JobStatus represents the live status of a video processing job.
@@ -45,6 +47,7 @@ type JobStatus struct {
 	TranscriptKey   string         `json:"transcript_key,omitempty"`
 	SubtitlesKey    string         `json:"subtitles_key,omitempty"`
 	SubtitlesASSKey string         `json:"subtitles_ass_key,omitempty"`
+	StoryboardKey   string         `json:"storyboard_key,omitempty"`
 	Metadata        *VideoMetadata `json:"metadata,omitempty"`
 	Error           string         `json:"error,omitempty"`
 }

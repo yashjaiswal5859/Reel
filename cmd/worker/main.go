@@ -10,6 +10,7 @@ import (
 
 	"go.temporal.io/sdk/worker"
 	"reel/internal/ai/asr"
+	"reel/internal/ai/llm"
 	"reel/internal/config"
 	"reel/internal/logger"
 	"reel/internal/media"
@@ -78,12 +79,22 @@ func main() {
 		Storage: st,
 	}
 
+	llmProvider, err := llm.NewWithFallback(cfg.AI)
+	if err != nil {
+		log.Warn("llm provider not initialized", "error", err)
+	}
+	storyActs := &activities.StoryActivities{
+		Storage: st,
+		LLM:     llmProvider,
+	}
+
 	w.RegisterWorkflow(workflows.HelloWorkflow)
 	w.RegisterWorkflow(workflows.VideoProcessingWorkflow)
 	w.RegisterActivity(activities.HelloActivity)
 	w.RegisterActivity(prepActs)
 	w.RegisterActivity(asrActs)
 	w.RegisterActivity(subActs)
+	w.RegisterActivity(storyActs)
 
 	log.Info("starting temporal worker",
 		"task_queue", cfg.Temporal.TaskQueue,
