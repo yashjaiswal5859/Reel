@@ -5,6 +5,7 @@ import (
 
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
+	"reel/internal/composition"
 	"reel/internal/media"
 	"reel/internal/temporal/activities"
 )
@@ -15,8 +16,9 @@ const (
 
 // VideoJobInput starts a stateless upload-to-result video processing workflow.
 type VideoJobInput struct {
-	JobID    string `json:"job_id"`
-	InputKey string `json:"input_key"`
+	JobID        string                    `json:"job_id"`
+	InputKey     string                    `json:"input_key"`
+	ExportConfig *composition.ExportConfig `json:"export_config,omitempty"`
 }
 
 // VideoProcessingWorkflow orchestrates video preprocessing (and future AI stages).
@@ -162,7 +164,31 @@ func VideoProcessingWorkflow(ctx workflow.Context, input VideoJobInput) (*media.
 	}
 
 	status.AnimationKey = animOut.AnimationVideoKey
-	status.Stage = media.StageAnimationReady
+	status.Stage = media.StageComposing
+	status.Progress = 98
+
+	exportCfg := composition.DefaultExportConfig()
+	if input.ExportConfig != nil {
+		exportCfg = *input.ExportConfig
+	}
+
+	var compOut activities.ComposeOutput
+	var compActs *activities.ComposeActivities
+	if err := workflow.ExecuteActivity(actCtx, compActs.ComposeFinalVideo, activities.ComposeInput{
+		JobID:             input.JobID,
+		InputKey:          input.InputKey,
+		AnimationVideoKey: animOut.AnimationVideoKey,
+		SubtitlesASSKey:   subOut.SubtitlesASSKey,
+		ExpectedDuration:  meta.DurationSec,
+		ExportConfig:      exportCfg,
+	}).Get(ctx, &compOut); err != nil {
+		status.Stage = media.StageFailed
+		status.Error = err.Error()
+		return &status, err
+	}
+
+	status.FinalVideoKey = compOut.FinalVideoKey
+	status.Stage = media.StageCompleted
 	status.Progress = 100
 
 	return &status, nil

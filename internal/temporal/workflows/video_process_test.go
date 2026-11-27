@@ -10,6 +10,7 @@ import (
 	"reel/internal/ai/imagegen"
 	"reel/internal/ai/llm"
 	"reel/internal/animation"
+	"reel/internal/composition"
 	"reel/internal/media"
 	"reel/internal/storage"
 	"reel/internal/temporal/activities"
@@ -103,6 +104,12 @@ func (s *stubAnimRenderer) RenderTimeline(_ context.Context, _ *animation.Timeli
 	return os.WriteFile(outputPath, []byte("MP4-ANIM-BYTES"), 0600)
 }
 
+type stubCompositor struct{}
+
+func (s *stubCompositor) Compose(_ context.Context, req composition.ComposeRequest) error {
+	return os.WriteFile(req.OutputPath, []byte("FINAL-MP4-BYTES"), 0600)
+}
+
 func TestVideoProcessingWorkflow_Success(t *testing.T) {
 	ctx := context.Background()
 	st, err := storage.NewLocalStorage(t.TempDir())
@@ -146,6 +153,18 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 		Storage:  st,
 		Renderer: &stubAnimRenderer{},
 	}
+	compActs := &activities.ComposeActivities{
+		Storage:    st,
+		Compositor: &stubCompositor{},
+		Media: &stubMediaProcessor{
+			meta: &media.VideoMetadata{
+				DurationSec: 25.0,
+				Width:       1080,
+				Height:      1920,
+				HasAudio:    true,
+			},
+		},
+	}
 
 	var ts testsuite.WorkflowTestSuite
 	env := ts.NewTestWorkflowEnvironment()
@@ -155,6 +174,7 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 	env.RegisterActivity(storyActs)
 	env.RegisterActivity(imgActs)
 	env.RegisterActivity(animActs)
+	env.RegisterActivity(compActs)
 
 	env.ExecuteWorkflow(workflows.VideoProcessingWorkflow, workflows.VideoJobInput{
 		JobID:    "job-123",
@@ -166,7 +186,7 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 
 	var result media.JobStatus
 	require.NoError(t, env.GetWorkflowResult(&result))
-	assert.Equal(t, media.StageAnimationReady, result.Stage)
+	assert.Equal(t, media.StageCompleted, result.Stage)
 	assert.Equal(t, 100, result.Progress)
 	assert.Equal(t, "jobs/job-123/audio.wav", result.AudioKey)
 	assert.Equal(t, "jobs/job-123/preview.mp4", result.PreviewKey)
@@ -175,6 +195,7 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 	assert.Equal(t, "jobs/job-123/subtitles.ass", result.SubtitlesASSKey)
 	assert.Equal(t, "jobs/job-123/storyboard.json", result.StoryboardKey)
 	assert.Equal(t, "jobs/job-123/animation.mp4", result.AnimationKey)
+	assert.Equal(t, "jobs/job-123/final.mp4", result.FinalVideoKey)
 	require.NotNil(t, result.Metadata)
 	assert.Equal(t, "portrait", result.Metadata.Orientation)
 
@@ -187,6 +208,7 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 		result.SubtitlesASSKey,
 		result.StoryboardKey,
 		result.AnimationKey,
+		result.FinalVideoKey,
 		"jobs/job-123/characters/char_1.png",
 		"jobs/job-123/scenes/sc_1.png",
 		"jobs/job-123/animation_timeline.json",

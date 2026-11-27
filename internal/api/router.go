@@ -50,6 +50,9 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 	ah := &assetHandler{
 		storage: deps.Storage,
 	}
+	dh := &downloadHandler{
+		storage: deps.Storage,
+	}
 
 	v1 := r.Group("/api/v1")
 	{
@@ -62,6 +65,7 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 		v1.PUT("/jobs/:id/subtitles/style", sh.updateStyle)
 		v1.GET("/jobs/:id/storyboard", sbh.get)
 		v1.GET("/jobs/:id/assets/*asset", ah.get)
+		v1.GET("/jobs/:id/download", dh.download)
 	}
 
 	return r

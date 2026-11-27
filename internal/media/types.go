@@ -36,6 +36,8 @@ const (
 	StageImagesReady          JobStage = "images_ready"
 	StageAnimating            JobStage = "animating"
 	StageAnimationReady       JobStage = "animation_ready"
+	StageComposing            JobStage = "composing"
+	StageCompleted            JobStage = "completed"
 	StageFailed               JobStage = "failed"
 	StageCancelled            JobStage = "cancelled"
 )
@@ -53,6 +55,7 @@ type JobStatus struct {
 	SubtitlesASSKey   string         `json:"subtitles_ass_key,omitempty"`
 	StoryboardKey     string         `json:"storyboard_key,omitempty"`
 	AnimationKey      string         `json:"animation_key,omitempty"`
+	FinalVideoKey     string         `json:"final_video_key,omitempty"`
 	Metadata          *VideoMetadata `json:"metadata,omitempty"`
 	Error             string         `json:"error,omitempty"`
 }

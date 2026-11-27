@@ -13,6 +13,7 @@ import (
 	"reel/internal/ai/imagegen"
 	"reel/internal/ai/llm"
 	"reel/internal/animation"
+	"reel/internal/composition"
 	"reel/internal/config"
 	"reel/internal/logger"
 	"reel/internal/media"
@@ -109,6 +110,13 @@ func main() {
 		Renderer: animRenderer,
 	}
 
+	mediaProc := media.NewFFmpegProcessor(cfg.FFmpeg.FFmpegPath, cfg.FFmpeg.FFprobePath)
+	compActs := &activities.ComposeActivities{
+		Storage:    st,
+		Compositor: composition.NewFFmpegCompositor(cfg.FFmpeg.FFmpegPath),
+		Media:      mediaProc,
+	}
+
 	w.RegisterWorkflow(workflows.HelloWorkflow)
 	w.RegisterWorkflow(workflows.VideoProcessingWorkflow)
 	w.RegisterActivity(activities.HelloActivity)
@@ -118,6 +126,7 @@ func main() {
 	w.RegisterActivity(storyActs)
 	w.RegisterActivity(imgActs)
 	w.RegisterActivity(animActs)
+	w.RegisterActivity(compActs)
 
 	log.Info("starting temporal worker",
 		"task_queue", cfg.Temporal.TaskQueue,
