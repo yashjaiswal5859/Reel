@@ -10,6 +10,7 @@ import (
 
 	"go.temporal.io/sdk/worker"
 	"reel/internal/ai/asr"
+	"reel/internal/ai/imagegen"
 	"reel/internal/ai/llm"
 	"reel/internal/config"
 	"reel/internal/logger"
@@ -88,6 +89,16 @@ func main() {
 		LLM:     llmProvider,
 	}
 
+	imgProvider, err := imagegen.NewWithFallback(cfg.AI)
+	if err != nil {
+		log.Warn("imagegen provider not initialized", "error", err)
+	}
+	imgActs := &activities.ImageActivities{
+		Storage:        st,
+		ImageGen:       imgProvider,
+		MaxConcurrency: 3,
+	}
+
 	w.RegisterWorkflow(workflows.HelloWorkflow)
 	w.RegisterWorkflow(workflows.VideoProcessingWorkflow)
 	w.RegisterActivity(activities.HelloActivity)
@@ -95,6 +106,7 @@ func main() {
 	w.RegisterActivity(asrActs)
 	w.RegisterActivity(subActs)
 	w.RegisterActivity(storyActs)
+	w.RegisterActivity(imgActs)
 
 	log.Info("starting temporal worker",
 		"task_queue", cfg.Temporal.TaskQueue,

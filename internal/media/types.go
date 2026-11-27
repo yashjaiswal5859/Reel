@@ -32,6 +32,8 @@ const (
 	StageSubtitlesReady       JobStage = "subtitles_ready"
 	StageGeneratingStoryboard JobStage = "generating_storyboard"
 	StageStoryboardReady      JobStage = "storyboard_ready"
+	StageGeneratingImages     JobStage = "generating_images"
+	StageImagesReady          JobStage = "images_ready"
 	StageFailed               JobStage = "failed"
 	StageCancelled            JobStage = "cancelled"
 )

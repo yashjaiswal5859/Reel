@@ -118,7 +118,33 @@ func VideoProcessingWorkflow(ctx workflow.Context, input VideoJobInput) (*media.
 	}
 
 	status.StoryboardKey = storyOut.StoryboardKey
-	status.Stage = media.StageStoryboardReady
+	status.Stage = media.StageGeneratingImages
+	status.Progress = 92
+
+	imgIn := activities.ImageGenInput{
+		JobID:         input.JobID,
+		StoryboardKey: storyOut.StoryboardKey,
+		Width:         1024,
+		Height:        1024,
+	}
+	var imgActs *activities.ImageActivities
+
+	var charImgOut activities.ImageGenOutput
+	if err := workflow.ExecuteActivity(actCtx, imgActs.GenerateCharacterRefs, imgIn).Get(ctx, &charImgOut); err != nil {
+		status.Stage = media.StageFailed
+		status.Error = err.Error()
+		return &status, err
+	}
+
+	status.Progress = 96
+	var sceneImgOut activities.ImageGenOutput
+	if err := workflow.ExecuteActivity(actCtx, imgActs.GenerateSceneImages, imgIn).Get(ctx, &sceneImgOut); err != nil {
+		status.Stage = media.StageFailed
+		status.Error = err.Error()
+		return &status, err
+	}
+
+	status.Stage = media.StageImagesReady
 	status.Progress = 100
 
 	return &status, nil

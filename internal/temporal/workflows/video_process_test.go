@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"reel/internal/ai/asr"
+	"reel/internal/ai/imagegen"
 	"reel/internal/ai/llm"
 	"reel/internal/media"
 	"reel/internal/storage"
@@ -83,6 +84,17 @@ func (s *stubLLMStrategy) Generate(_ context.Context, _ llm.GenerateRequest) (*l
 	}, nil
 }
 
+type stubImageGenStrategy struct{}
+
+func (s *stubImageGenStrategy) Name() string { return "stub-img" }
+func (s *stubImageGenStrategy) Generate(_ context.Context, _ imagegen.GenerateRequest) (*imagegen.GenerateResponse, error) {
+	return &imagegen.GenerateResponse{
+		Provider:    "stub-img",
+		ImageBytes:  []byte("PNG-IMAGE-BYTES"),
+		ContentType: "image/png",
+	}, nil
+}
+
 func TestVideoProcessingWorkflow_Success(t *testing.T) {
 	ctx := context.Background()
 	st, err := storage.NewLocalStorage(t.TempDir())
@@ -117,6 +129,11 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 		Storage: st,
 		LLM:     &stubLLMStrategy{},
 	}
+	imgActs := &activities.ImageActivities{
+		Storage:        st,
+		ImageGen:       &stubImageGenStrategy{},
+		MaxConcurrency: 2,
+	}
 
 	var ts testsuite.WorkflowTestSuite
 	env := ts.NewTestWorkflowEnvironment()
@@ -124,6 +141,7 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 	env.RegisterActivity(asrActs)
 	env.RegisterActivity(subActs)
 	env.RegisterActivity(storyActs)
+	env.RegisterActivity(imgActs)
 
 	env.ExecuteWorkflow(workflows.VideoProcessingWorkflow, workflows.VideoJobInput{
 		JobID:    "job-123",
@@ -135,7 +153,7 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 
 	var result media.JobStatus
 	require.NoError(t, env.GetWorkflowResult(&result))
-	assert.Equal(t, media.StageStoryboardReady, result.Stage)
+	assert.Equal(t, media.StageImagesReady, result.Stage)
 	assert.Equal(t, 100, result.Progress)
 	assert.Equal(t, "jobs/job-123/audio.wav", result.AudioKey)
 	assert.Equal(t, "jobs/job-123/preview.mp4", result.PreviewKey)
@@ -147,7 +165,16 @@ func TestVideoProcessingWorkflow_Success(t *testing.T) {
 	assert.Equal(t, "portrait", result.Metadata.Orientation)
 
 	// Verify all artifacts actually landed in storage
-	for _, k := range []string{result.AudioKey, result.PreviewKey, result.TranscriptKey, result.SubtitlesKey, result.SubtitlesASSKey, result.StoryboardKey} {
+	for _, k := range []string{
+		result.AudioKey,
+		result.PreviewKey,
+		result.TranscriptKey,
+		result.SubtitlesKey,
+		result.SubtitlesASSKey,
+		result.StoryboardKey,
+		"jobs/job-123/characters/char_1.png",
+		"jobs/job-123/scenes/sc_1.png",
+	} {
 		exists, err := st.Exists(ctx, k)
 		require.NoError(t, err)
 		assert.True(t, exists, "expected %s in storage", k)
