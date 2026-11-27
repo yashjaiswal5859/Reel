@@ -1,0 +1,21 @@
+# Binaries & build artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Environment secrets
+.env
+
+# Temp storage & media files
+tmp/
+uploads/
+outputs/
+
+# IDE
+.vscode/
+.idea/

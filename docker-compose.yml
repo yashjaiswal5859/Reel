@@ -1,0 +1,30 @@
+services:
+  temporal:
+    image: temporalio/server:latest
+    container_name: reel-temporal
+    ports:
+      - "7233:7233"
+      - "8233:8233"
+    command: ["server", "start-dev", "--ip", "0.0.0.0", "--ui-port", "8233"]
+
+  minio:
+    image: minio/minio:latest
+    container_name: reel-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: reel-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  minio_data:
