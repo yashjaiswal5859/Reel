@@ -34,24 +34,27 @@ const (
 	StageStoryboardReady      JobStage = "storyboard_ready"
 	StageGeneratingImages     JobStage = "generating_images"
 	StageImagesReady          JobStage = "images_ready"
+	StageAnimating            JobStage = "animating"
+	StageAnimationReady       JobStage = "animation_ready"
 	StageFailed               JobStage = "failed"
 	StageCancelled            JobStage = "cancelled"
 )
 
 // JobStatus represents the live status of a video processing job.
 type JobStatus struct {
-	JobID           string         `json:"job_id"`
-	Stage           JobStage       `json:"stage"`
-	Progress        int            `json:"progress"` // 0-100
-	InputKey        string         `json:"input_key"`
-	AudioKey        string         `json:"audio_key,omitempty"`
-	PreviewKey      string         `json:"preview_key,omitempty"`
-	TranscriptKey   string         `json:"transcript_key,omitempty"`
-	SubtitlesKey    string         `json:"subtitles_key,omitempty"`
-	SubtitlesASSKey string         `json:"subtitles_ass_key,omitempty"`
-	StoryboardKey   string         `json:"storyboard_key,omitempty"`
-	Metadata        *VideoMetadata `json:"metadata,omitempty"`
-	Error           string         `json:"error,omitempty"`
+	JobID             string         `json:"job_id"`
+	Stage             JobStage       `json:"stage"`
+	Progress          int            `json:"progress"` // 0-100
+	InputKey          string         `json:"input_key"`
+	AudioKey          string         `json:"audio_key,omitempty"`
+	PreviewKey        string         `json:"preview_key,omitempty"`
+	TranscriptKey     string         `json:"transcript_key,omitempty"`
+	SubtitlesKey      string         `json:"subtitles_key,omitempty"`
+	SubtitlesASSKey   string         `json:"subtitles_ass_key,omitempty"`
+	StoryboardKey     string         `json:"storyboard_key,omitempty"`
+	AnimationKey      string         `json:"animation_key,omitempty"`
+	Metadata          *VideoMetadata `json:"metadata,omitempty"`
+	Error             string         `json:"error,omitempty"`
 }
 
 var allowedExtensions = map[string]bool{

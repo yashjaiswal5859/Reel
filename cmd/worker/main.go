@@ -12,6 +12,7 @@ import (
 	"reel/internal/ai/asr"
 	"reel/internal/ai/imagegen"
 	"reel/internal/ai/llm"
+	"reel/internal/animation"
 	"reel/internal/config"
 	"reel/internal/logger"
 	"reel/internal/media"
@@ -99,6 +100,15 @@ func main() {
 		MaxConcurrency: 3,
 	}
 
+	animRenderer, err := animation.NewRenderer("ffmpeg", cfg.FFmpeg.FFmpegPath)
+	if err != nil {
+		log.Warn("animation renderer not initialized", "error", err)
+	}
+	animActs := &activities.AnimationActivities{
+		Storage:  st,
+		Renderer: animRenderer,
+	}
+
 	w.RegisterWorkflow(workflows.HelloWorkflow)
 	w.RegisterWorkflow(workflows.VideoProcessingWorkflow)
 	w.RegisterActivity(activities.HelloActivity)
@@ -107,6 +117,7 @@ func main() {
 	w.RegisterActivity(subActs)
 	w.RegisterActivity(storyActs)
 	w.RegisterActivity(imgActs)
+	w.RegisterActivity(animActs)
 
 	log.Info("starting temporal worker",
 		"task_queue", cfg.Temporal.TaskQueue,
