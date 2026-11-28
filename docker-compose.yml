@@ -1,6 +1,6 @@
 services:
   temporal:
-    image: temporalio/server:latest
+    image: temporalio/temporal:latest
     container_name: reel-temporal
     ports:
       - "7233:7233"

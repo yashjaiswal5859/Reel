@@ -58,10 +58,9 @@ func (r *FFmpegRenderer) RenderTimeline(ctx context.Context, tl *Timeline, scene
 
 		if err := r.runFFmpeg(ctx,
 			"-y",
-			"-loop", "1",
-			"-t", durStr,
 			"-i", imgPath,
 			"-vf", filter,
+			"-t", durStr,
 			"-c:v", "libx264",
 			"-preset", "veryfast",
 			"-pix_fmt", "yuv420p",

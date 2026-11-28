@@ -72,18 +72,25 @@ func (o *openAIClient) Generate(ctx context.Context, req GenerateRequest) (*Gene
 	}
 
 	size := "1024x1024"
-	if req.Width > req.Height {
-		size = "1792x1024"
-	} else if req.Height > req.Width {
-		size = "1024x1792"
+	if strings.HasPrefix(model, "gpt-image") {
+		if req.Width > req.Height {
+			size = "1536x1024"
+		} else if req.Height > req.Width {
+			size = "1024x1536"
+		}
+	} else {
+		if req.Width > req.Height {
+			size = "1792x1024"
+		} else if req.Height > req.Width {
+			size = "1024x1792"
+		}
 	}
 
 	payloadBytes, err := json.Marshal(map[string]any{
-		"model":           model,
-		"prompt":          req.Prompt,
-		"n":               1,
-		"size":            size,
-		"response_format": "b64_json",
+		"model":  model,
+		"prompt": req.Prompt,
+		"n":      1,
+		"size":   size,
 	})
 	if err != nil {
 		return nil, err
@@ -123,15 +130,26 @@ func (o *openAIClient) Generate(ctx context.Context, req GenerateRequest) (*Gene
 		return nil, errors.New("openai returned empty image data")
 	}
 
-	imgBytes, err := base64.StdEncoding.DecodeString(parsed.Data[0].B64JSON)
-	if err != nil {
-		return nil, fmt.Errorf("decode b64_json: %w", err)
+	var imgBytes []byte
+	contentType := "image/png"
+	if parsed.Data[0].B64JSON != "" {
+		imgBytes, err = base64.StdEncoding.DecodeString(parsed.Data[0].B64JSON)
+		if err != nil {
+			return nil, fmt.Errorf("decode b64_json: %w", err)
+		}
+	} else if parsed.Data[0].URL != "" {
+		imgBytes, contentType, err = downloadImage(ctx, o.httpClient, parsed.Data[0].URL)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("openai returned neither b64_json nor url")
 	}
 
 	return &GenerateResponse{
 		Provider:    "openai",
 		Model:       model,
 		ImageBytes:  imgBytes,
-		ContentType: "image/png",
+		ContentType: contentType,
 	}, nil
 }
